@@ -19,7 +19,7 @@ Open your GIT Bash terminal.\
 Go to root directory and install virtualenv package to your global environment with following commands:
 ```
 cd
-pip install virtualenv
+pip instal virtualenv
 ```
 Create a virtual environment with following command:
 ```
