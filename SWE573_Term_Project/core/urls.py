@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .src.utils import generate_preview
+
 app_name = "core"
 
 urlpatterns = [
@@ -15,7 +16,10 @@ urlpatterns = [
     path("delete_post", views.delete_post, name="delete_post"),
     path("book_post", views.book_post, name="book_post"),
     path("preview/", generate_preview.generate_preview, name="generate"),
-    path("search", views.search, name="search")
+    path("search", views.search, name="search"),
+    path("follow", views.follow, name="follow"),
+    path("tags/<str:tag_name>", views.tags, name="tags"),
+    path("spaces/<str:space_name>", views.spaces, name="spaces")
     # path("feed", views.feed, name="logout"),
     # path("profile", views.profile, name="logout"),
 ]

@@ -1,5 +1,5 @@
 """Contains utility methods for Post model"""
-from ...models import Post
+from ...models import Post, Profile, Tag, Space
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from ..utils.generate_preview import generate_preview_
@@ -32,7 +32,25 @@ def create_post(request: object) -> None:
                                        link=request.POST.get("link"),
                                        caption=request.POST.get("caption"),
                                        )
+    print(['tag' in key for key in list(request.POST.keys())], type(request.POST.keys()), )
+    for key in list(request.POST.keys()):
+        if 'tag' in key:
+            # Get the tag name
+            print(key)
+            tag_name = request.POST.get(key)
+            print(tag_name)
+            # Get the Tag object
+            tag = Tag.objects.get(name=tag_name)
+            new_post.tags.add(tag)
+    space_name = request.POST.get('space')
+    if space_name:
+        space = Space.objects.get(name=space_name)
+        new_post.spaces.add(space)
+    print(request.POST)
     new_post.save()
+    # Print the tags
+    for tag in new_post.tags.all():
+        print(tag.name)
     pass
 
 
@@ -57,7 +75,22 @@ def update_post(request: object) -> None:
         current_post.title = preview.get('title')
         current_post.description = preview.get('description')
         current_post.preview_image = preview.get('image')
-    print("preview is:", preview)
+    # Reset the tags
+    current_post.tags.clear()
+    # Reassign the keys
+    for key in list(request.POST.keys()):
+        if 'tag' in key:
+            # Get the tag name
+            tag_name = request.POST.get(key)
+            # Get the Tag object
+            tag = Tag.objects.get(name=tag_name)
+            current_post.tags.add(tag)
+    space_name = request.POST.get('space')
+    if space_name:
+        current_post.spaces.clear()
+        space = Space.objects.get(name=space_name)
+        current_post.spaces.add(space)
+    print(request.POST)
     current_post.save()
 
 
@@ -69,24 +102,25 @@ def __book_post__(request: object) -> HttpResponseRedirect:
     @return: Redirects the user to the current page
     """
     try:
-        username = request.user.username
-        print("Post created by username:", username)
+
+        id_user = Profile.objects.get(user=request.user).id_user
+        print("Post created by username:", id_user)
         # Get the Post model by post_id
         post_id = request.GET.get('post_id')
         post = Post.objects.get(post_id=post_id)
         print("post is", post)
         path = request.META.get('HTTP_REFERER')
         # Control whether bookmarked or not
-        if username in post.bookmarked_by:
-            return un_bookmark_post(path=path, post=post, username=username)
+        if id_user in post.bookmarked_by:
+            return un_bookmark_post(path=path, post=post, id_user=id_user)
         else:
-            return bookmark_post(path=path, post=post, username=username)
+            return bookmark_post(path=path, post=post, id_user=id_user)
     except Exception as e:
         print("Error is:", e)
         raise e
 
 
-def bookmark_post(path, post: Post, username: str) -> HttpResponseRedirect:
+def bookmark_post(path, post: Post, id_user: int) -> HttpResponseRedirect:
     """
     Implementation of bookmarking of a Post model. Appends the username to the bookmarked_by attribute of the post and
     increases num_of_bookmarks by 1
@@ -96,13 +130,13 @@ def bookmark_post(path, post: Post, username: str) -> HttpResponseRedirect:
     @return: Redirects the user to the current page
     """
     print("Bookmarked")
-    post.bookmarked_by.append(username)
+    post.bookmarked_by.append(id_user)
     post.num_of_bookmarks += 1
     post.save()
     return HttpResponseRedirect(path)
 
 
-def un_bookmark_post(path, post: Post, username: str):
+def un_bookmark_post(path, post: Post, id_user: int):
     """
     Implementation of un-bookmarking of a Post model. Removes the username to the bookmarked_by attribute of the post and
     decreases num_of_bookmarks by 1
@@ -112,7 +146,7 @@ def un_bookmark_post(path, post: Post, username: str):
     @return: Redirects the user to the current page
     """
     print("De-bookmarked")
-    post.bookmarked_by.remove(username)
+    post.bookmarked_by.remove(id_user)
     post.num_of_bookmarks -= 1
     post.save()
     return HttpResponseRedirect(path)
