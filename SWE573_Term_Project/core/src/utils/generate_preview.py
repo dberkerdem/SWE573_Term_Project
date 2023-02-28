@@ -113,4 +113,3 @@ def generate_preview_(url: str):
             return dict()
     except Exception as e:
         return dict()
-
